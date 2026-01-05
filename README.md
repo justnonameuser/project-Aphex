@@ -117,6 +117,7 @@ GROUP BY DIM_TIME.YEAR
 ORDER BY DIM_TIME.YEAR;
 ```
 <img alt="dynamika_migracie.png" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/dynamika_migracie.png"/>
+
 ### 2) Odhadovaná migrácia mužov (total - female)
 ```sql
 SELECT DIM_TIME.year,SUM(CASE 
@@ -164,6 +165,7 @@ GROUP BY DIM_COUNTRY.country_name
 ORDER BY TOTAL_INFLOW DESC LIMIT 10;
 ```
 <img alt="kam_prichadzaju.png" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/kam_prichadzaju.png"/>
+
 ### 5) Príchod proti odchodu
 ```sql
 SELECT DIM_FLOW.measure_desc,SUM(FACT_MIGRATION.migrant_count) as TOTAL_COUNT
@@ -173,5 +175,6 @@ WHERE DIM_FLOW.measure_code IN ('B11', 'B12')
 GROUP BY DIM_FLOW.measure_desc;
 ```
 <img alt="prichod_odchod.png" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/prichod_odchod.png"/>
+
 ---
 **Autor:** Maksym Zukh
