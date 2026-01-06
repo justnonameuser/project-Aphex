@@ -1,4 +1,4 @@
-
+<img width="1361" height="956" alt="изображение" src="https://github.com/user-attachments/assets/ea56609b-c4f0-4c71-87ba-8c936b922806" />
 
 # ELT proces datasetu OECD International Migration
 
@@ -24,12 +24,41 @@ V rámci analýzy bola použitá iba prvá tabuľka, pretože obsahuje najviac �
 ---
 ## 2. Dimenzionálny model
 <img alt="star_schema" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/star-schema.png"/>
-Pre potreby reportingu bola navrhnutá schéma hviezdy (Star Schema), ktorá obsahuje 1 tabuľku faktov FACT_MIGRATION a 5 dimenzií:
-- DIM_COUNTRY: Obsahuje informácie o krajine, ktorá reportuje štatistiku (krajina určenia).
-- DIM_ORIGIN: Obsahuje údaje o krajine pôvodu migrantov (miesto narodenia).
+
+Pre potreby analytického spracovania bola navrhnutá Star schéma, ktorá obsahuje 1 tabuľku faktov FACT_MIGRATION a 5 dimenzií:
+- FACT_MIGRATION: Tabuľka obsahuje údaje o migračných pohyboch.
+    Primárny kľúč: MIGRATION_ID.
+    Cudzie kľúče:
+        COUNTRY_ID (odkaz na DIM_COUNTRY)
+        TIME_ID (odkaz na DIM_TIME)
+        IDDIM_DEMOGRAPHICS (odkaz na DIM_DEMOGRAPHICS)
+        FLOW_ID (odkaz na DIM_FLOW)
+        ORIGIN_ID (odkaz na DIM_ORIGIN)
+    Metriky:
+        MIGRANT_COUNT: Počet migrantov pre daný rok a kategóriu.
+        PREV_YEAR_COUNT: Počet migrantov v predchádzajúcom roku (vypočítané pomocou funkcie LAG).
+
+- DIM_COUNTRY: Obsahuje informácie o krajine, ktorá reportuje štatistiku (krajina určenia). 
+    Obsah: Zoznam reportujúcich krajín (kódy a názvy).
+    Vzťah: 1:N k tabuľke faktov (jedna krajina má veľa záznamov o migrácii).
+    SCD Typ: 1. V prípade zmeny názvu krajiny alebo opravy v číselníku sa hodnota prepíše aktuálnou verziou.
+- DIM_ORIGIN: Obsahuje údaje o krajine pôvodu migrantov (miesto narodenia). Pôvodne navrhnutá pre krajinu pôvodu (miesto narodenia). Vzhľadom na to, že zdrojové dáta v tomto stĺpci obsahovali prevažne chýbajúce hodnoty (Not applicable), bola pre analýzu pôvodu migrantov použitá dimenzia DIM_DEMOGRAPHICS (atribút Citizenship). 
+    Obsah: Krajina narodenia (Place of Birth).
+    Vzťah: 1:N k tabuľke faktov.
+    SCD Typ: 1.
+    Poznámka: Táto dimenzia bola vytvorená ako súčasť návrhu, avšak v zdrojovom datasete obsahuje pre väčšinu záznamov hodnotu _Not applicable_. Pre analýzu pôvodu migrantov bola preto využitá dimenzia DIM_DEMOGRAPHICS.
 - DIM_TIME: Časová dimenzia obsahujúca roky a desaťročia.
-- DIM_DEMOGRAPHICS: Kombinácia atribútov pohlavia (Gender) a občianstva (Citizenship).
+    Obsah: Roky (Year) a odvodený atribút Dekáda (Decade).
+    Vzťah: 1:N k tabuľke faktov.
+    SCD Typ: 0. Časové údaje sú nemenné a statické.
+- DIM_DEMOGRAPHICS: Kombinácia atribútov pohlavia (Gender) a občianstva (Citizenship). 
+    Obsah: Kombinácia atribútov Pohlavie (Sex) a Občianstvo (Citizenship). Slúži na demografickú segmentáciu.
+    Vzťah: 1:N k tabuľke faktov.
+    SCD Typ: 1. Opravy v popise demografických kategórií (napr. zmena názvu "Female" na "Women") by sa riešili prepisom.
 - DIM_FLOW: Popisuje typ merania (napr. Inflows, Outflows).
+    Obsah: Typy migračných tokov (napr. Inflow, Outflow, Asylum seekers).
+    Vzťah: 1:N k tabuľke faktov.
+    SCD Typ: 1.
 
 ---
 ## 3. ELT proces v Snowflake
@@ -64,10 +93,11 @@ FROM (SELECT DISTINCT PLACE_OF_BIRTH_CODE, PLACE_OF_BIRTH_DESCRIPTION FROM MIGRA
 ```
 DIM_TIME:
 ```sql
-create or replace TABLE DIM_TIME as SELECT 
-ROW_NUMBER() OVER (ORDER BY TIME_PERIOD) as time_id,
-CAST(TIME_PERIOD as INTEGER) as year
-FROM (SELECT DISTINCT TIME_PERIOD from MIGRATION_STAGING);
+CREATE OR REPLACE TABLE DIM_TIME as 
+SELECT ROW_NUMBER() OVER (ORDER BY TIME_PERIOD) as time_id,
+CAST(TIME_PERIOD as INTEGER) as year,
+CAST(FLOOR(CAST(TIME_PERIOD as INTEGER) / 10) * 10 AS INTEGER) as decade
+FROM (SELECT DISTINCT TIME_PERIOD from migration_staging WHERE TIME_PERIOD IS NOT NULL);
 ```
 Dimenzia DIM_DEMOGRAPHICS kombinuje pohlavie a občianstvo do jedného ID pre optimalizáciu modelu:
 ```sql
