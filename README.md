@@ -1,4 +1,3 @@
-<img width="1361" height="956" alt="изображение" src="https://github.com/user-attachments/assets/ea56609b-c4f0-4c71-87ba-8c936b922806" />
 
 # ELT proces datasetu OECD International Migration
 
@@ -23,7 +22,7 @@ V rámci analýzy bola použitá iba prvá tabuľka, pretože obsahuje najviac �
 Účelom ELT procesu bolo tieto surové dáta vyčistiť, normalizovať a transformovať do hviezdicovej schémy vhodnej na analytické účely.
 ---
 ## 2. Dimenzionálny model
-<img alt="star_schema" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/star-schema.png"/>
+<img alt="star_schema" src="https://github.com/justnonameuser/project-Aphex/blob/main/img/star_schema.png"/>
 
 Pre potreby analytického spracovania bola navrhnutá Star schéma, ktorá obsahuje 1 tabuľku faktov FACT_MIGRATION a 5 dimenzií:
 - FACT_MIGRATION: Tabuľka obsahuje údaje o migračných pohyboch.
